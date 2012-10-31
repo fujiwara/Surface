@@ -57,9 +57,11 @@ sub register {
 
 sub dequeue {
     my $self = shift;
+    my $timeout = shift || 0;
+
     my $key  = $self->namespace;
     debugf("fetch %s using blpop", $key);
-    my (undef, $str) = $self->redis->blpop("QUEUE:$key", 1);
+    my (undef, $str) = $self->redis->blpop("QUEUE:$key", $timeout);
     if (defined $str) {
         return JSON::decode_json($str);
     }
@@ -77,9 +79,11 @@ sub last_updated {
 sub is_active {
     my $self = shift;
     my $expired = time - $self->expires;
-    my $lu = $self->last_updated;
-    debugf("%s > %s", $lu, $expired);
-    $self->last_updated > $expired;
+    my $last_updated = $self->last_updated;
+
+    return 1 unless $last_updated;
+
+    $last_updated > $expired;
 }
 
 sub cleanup {
@@ -88,7 +92,6 @@ sub cleanup {
 
     my $last_updated = $self->last_updated;
     unless ($last_updated) {
-        warnf("can't get LAST_UPDATED:%s", $key);
         return 0;
     }
 

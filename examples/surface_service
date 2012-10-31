@@ -1,0 +1,64 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use Proclet::Declare;
+use Surface;
+use Surface::Manager;
+use Surface::WebAPI;
+use Getopt::Long qw(:config posix_default no_ignore_case gnu_compat);
+use Path::Class qw/ file /;
+use Log::Minimal;
+
+my ($dir);
+GetOptions(
+    "dir|d=s" => \$dir,
+);
+if (!$dir || !chdir $dir) {
+    die "can't chdir $dir";
+}
+file("redis.conf")->openw->print(q{
+unixsocket redis.sock
+port 0
+});
+
+sub surface {
+    Surface->new(
+        redis_options => { sock => "redis.sock" },
+        expires => 30,
+    );
+}
+
+service("redis", "redis-server", "redis.conf");
+
+service(
+    "manager",
+    sub {
+        Surface::Manager->new( surface => surface )->run;
+    }
+);
+
+service(
+    "api",
+    sub {
+        Surface::WebAPI->new( surface => surface )->run( "-p" => "9000" );
+    }
+);
+
+service(
+    "worker",
+    sub {
+        my $surface = surface;
+
+        while (my $msg = $surface->dequeue) {
+            next unless $msg;
+            infof "worker[%d]: got message %s", $$, ddf $msg;
+        }
+    }
+);
+
+worker(
+    worker => 3,
+);
+color;
+run;

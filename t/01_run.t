@@ -43,13 +43,13 @@ for my $namespace (undef, "testing") {
 
     subtest "dequeue" => sub {
         my $msg;
-        ok $msg = $surface->dequeue;
+        ok $msg = $surface->dequeue(1);
         is_deeply $msg => { foo => 1 };
-        ok $msg = $surface->dequeue;
+        ok $msg = $surface->dequeue(1);
         is_deeply $msg => { bar => 2 };
-        ok $msg = $surface->dequeue;
+        ok $msg = $surface->dequeue(1);
         is_deeply $msg => { baz => 3 };
-        ok not $surface->dequeue;
+        ok not $surface->dequeue(1);
     };
 
     sleep $surface->expires;
@@ -69,11 +69,11 @@ for my $namespace (undef, "testing") {
     subtest "enqueue_all" => sub {
         ok $surface->enqueue_all;
         my $msg;
-        ok $msg = $surface->dequeue;
+        ok $msg = $surface->dequeue(1);
         is_deeply $msg => { xxx => 3 };
-        ok $msg = $surface->dequeue;
+        ok $msg = $surface->dequeue(1);
         is_deeply $msg => { bar => 2 };
-        ok $msg = $surface->dequeue;
+        ok $msg = $surface->dequeue(1);
         is_deeply $msg => { foo => 1 };
     };
 }
