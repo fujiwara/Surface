@@ -1,5 +1,6 @@
 cover_db
 META.yml
+MYMETA.*
 Makefile
 blib
 inc
@@ -9,3 +10,4 @@ Makefile.old
 nytprof.out
 MANIFEST.bak
 *.sw[po]
+*~
